@@ -135,7 +135,7 @@ def login(request):
             admin = AdminModel.objects.get(admin_mail=email, admin_password=password)
             admin_name = f"{admin.admin_first_name} {admin.admin_last_name}"
             request.session['user'] = admin_name
-            request.session.set_expiry(600)
+            request.session.set_expiry(21600)
 
             expiry = request.session.get_expiry_age()
 

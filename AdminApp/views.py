@@ -138,7 +138,6 @@ def login(request):
             request.session.set_expiry(600)
 
             expiry = request.session.get_expiry_age()
-            print(f"Session will expire in {expiry} seconds")
 
             return redirect('/')
         except AdminModel.DoesNotExist:
@@ -152,8 +151,6 @@ def reg(request):
         if form.is_valid():
             form.save()
             return redirect('login')  # Redirect to login page after successful registration
-        else:
-            print(form.errors)
     else:
         form = AdminForm()
     return render(request, 'register.html', {'form': form})
@@ -482,33 +479,33 @@ def update_profile(request, id):
     return Response(user_data.errors)
 
 
-@api_view(['POST'])
-def register(request):
-    contact = request.data.get('mobile_no')
-    if not contact:
-        return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
-
-    user, created = CustomerModel.objects.get_or_create(
-        customer_contact=contact,
-        defaults={
-            'customer_first_name': request.data.get('first_name', ''),
-            'customer_last_name': request.data.get('last_name', ''),
-            'customer_email': request.data.get('email', ''),
-        }
-    )
-
-    if created:
-        user.is_online = True
-        user.save()
-
-        # Create a wallet for the new user
-        wallet = WalletModel(user=user)
-        wallet.save()
-
-        user_data = CustomerSerializer(user)
-        return Response(user_data.data, status=status.HTTP_201_CREATED)
-    else:
-        return Response({'error': 'Customer already exists'}, status=status.HTTP_400_BAD_REQUEST)
+# @api_view(['POST'])
+# def register(request):
+#     contact = request.data.get('mobile_no')
+#     if not contact:
+#         return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#     user, created = CustomerModel.objects.get_or_create(
+#         customer_contact=contact,
+#         defaults={
+#             'customer_first_name': request.data.get('first_name', ''),
+#             'customer_last_name': request.data.get('last_name', ''),
+#             'customer_email': request.data.get('email', ''),
+#         }
+#     )
+#
+#     if created:
+#         user.is_online = True
+#         user.save()
+#
+#         # Create a wallet for the new user
+#         wallet = WalletModel(user=user)
+#         wallet.save()
+#
+#         user_data = CustomerSerializer(user)
+#         return Response(user_data.data, status=status.HTTP_201_CREATED)
+#     else:
+#         return Response({'error': 'Customer already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -518,22 +515,21 @@ def wallet(request, id):
     return Response(wallet_data.data)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def withdrawal(request, id):
     agent = WalletModel.objects.get(user__customer_id=id)
+    agent_amount = request.data.get('amount')
 
     if agent.total_amount >= 5000:
-        withdrawal_amount = agent.total_amount
-        agent.total_amount = agent.total_amount - withdrawal_amount
-        print(agent.total_amount)
+        agent.total_amount = agent.total_amount - agent_amount
         agent.save()
         WithdrawalHistoryModel.objects.create(
             agent=CustomerModel.objects.get(customer_id= id),
-            withdrawal_amount=withdrawal_amount,
+            withdrawal_amount=agent_amount,
             withdrawal_date=datetime.now()
         )
 
-        return JsonResponse({'message': f'Withdrawn amount: {withdrawal_amount}'}, status=200)
+        return JsonResponse({'message': f'Withdrawn amount: {agent_amount}'}, status=200)
     else:
         # Return error response if balance is insufficient
         return JsonResponse({'error': 'Insufficient balance for withdrawal'}, status=400)

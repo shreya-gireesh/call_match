@@ -47,6 +47,7 @@ urlpatterns = [
     path('all_users/', views.all_users, name='all_users'),
     path('all_agents/', views.all_agents, name='all_agents'),
     path('update_profile/<int:id>', views.update_profile, name='update_profile'),
+    path('terms/<int:id>', views.terms_conditions, name='terms_conditions'),
     path('wallet/<int:id>', views.wallet, name='wallet'),
     path('withdrawal/<int:id>', views.withdrawal, name='withdrawal'),
     path('notify_agent/', views.notify_agent, name='notify_agent'),
@@ -58,4 +59,5 @@ urlpatterns = [
     path('call_package/', views.list_call_packages, name='call_packages'),
     path('send_message/', views.send_message, name='send_message'),
     path('get_chat/<int:user1>/<int:user2>', views.get_chat, name='get_chat'),
+    path('give_rating/', views.give_rating, name='rating'),
 ]

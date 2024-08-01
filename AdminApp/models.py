@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -50,9 +51,17 @@ class CustomerModel(models.Model):
     )
     is_existing = models.BooleanField(default=False)
     adhaar_no = models.CharField(max_length=50, default="unknown")
+    rating = models.IntegerField()
+    c = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.customer_first_name} {self.customer_last_name}"
+
+    @property
+    def rating(self):
+        from .models import RatingModel
+        rating = RatingModel.objects.filter(agent=self).aggregate(Avg('ratings')).get('ratings__avg')
+        return rating if rating is not None else 0
 
 
 class WalletModel(models.Model):
@@ -159,3 +168,11 @@ class PaymentModel(models.Model):
 
     def __str__(self):
         return f"{self.user.customer_first_name} {self.user.customer_last_name}"
+
+
+class RatingModel(models.Model):
+    rating_id = models.AutoField(primary_key = True)
+    agent = models.ForeignKey(CustomerModel, on_delete=models.CASCADE, related_name='agent_id')
+    user = models.ForeignKey(CustomerModel, on_delete=models.CASCADE, related_name='user')
+    ratings = models.IntegerField()
+    created_at = models.DateTimeField()

@@ -3,6 +3,8 @@ from .models import *
 
 
 class CustomerSerializer(serializers.ModelSerializer):
+    rating = serializers.ReadOnlyField()
+
     class Meta:
         model = CustomerModel
         fields = '__all__'
@@ -56,4 +58,7 @@ class WithdrawalHistorySerializer(serializers.ModelSerializer):
         fields = ['agentpurchase_id', 'withdrawal_amount', 'withdrawal_date']
 
 
-
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RatingModel
+        fields = ['rating_id', 'agent', 'user', 'ratings', 'created_at']

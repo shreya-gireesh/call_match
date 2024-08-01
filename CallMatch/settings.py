@@ -136,3 +136,5 @@ AGORA_APP_CERTIFICATE = '04efd1a19a6c434d953865a785f5e905'
 SESSION_COOKIE_AGE = 21600  # Session expiry in seconds (1 minute)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when the browser is closed
 SESSION_SAVE_EVERY_REQUEST = True  # Save the session to make sure the expiry time is updated with every request
+
+

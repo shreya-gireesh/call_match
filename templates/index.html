@@ -19,6 +19,9 @@
             left: 0 !important;
             right: auto !important;
         }
+        .rating-container i {
+    margin-right: 2px;
+}
     </style>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -314,7 +317,8 @@
                                         <div class="d-flex justify-content-between">
                                             <div>
                                                 <div>{{agent.customer_first_name}} {{agent.customer_last_name}}</div>
-                                                <div>{{agent.customer_email}}</div>
+                                                <div class="rating-container" id="rating-{{ agent.customer_id }}" data-rating="{{ agent.rating }}"></div>
+
                                             </div>
 
                                             <div class="d-flex align-items-center">
@@ -428,6 +432,27 @@
     <script src="{% static 'js/demo/chart-area-demo.js' %}"></script>
     <script src="{% static 'js/demo/chart-pie-demo.js' %}"></script>
 <script>
+    document.addEventListener("DOMContentLoaded", function() {
+    const agentRatings = document.querySelectorAll('[id^="rating-"]');
+    agentRatings.forEach(function(element) {
+        const rating = parseFloat(element.getAttribute('data-rating'));
+        const fullHearts = Math.floor(rating);
+        const halfHeart = (rating % 1) >= 0.5;
+
+        let heartsHtml = '';
+        for (let i = 0; i < 5; i++) {
+            if (i < fullHearts) {
+                heartsHtml += '<i class="fas fa-heart" style="color: red;"></i>';
+            } else if (i === fullHearts && halfHeart) {
+                heartsHtml += '<i class="fas fa-heart-half-alt" style="color: red;"></i>';
+            } else {
+                heartsHtml += '<i class="fas fa-heart" style="color: grey;"></i>';
+            }
+        }
+        element.innerHTML = heartsHtml;
+    });
+});
+
 function toggleOnlineStatus(customerId) {
     fetch(`/toggle_online_status/${customerId}/`, {
         method: 'POST',

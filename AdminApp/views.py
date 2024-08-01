@@ -166,8 +166,19 @@ def home(request):
         all_agents = CustomerModel.objects.filter(status = 'Agent User')
         payments = PaymentModel.objects.all().aggregate(Sum('amount'))
         amount = payments['amount__sum']
+        # Ensure each agent's rating is included in the context
+        agents_with_ratings = []
+        for agent in all_agents:
+            agent_rating = agent.rating  # This uses the rating property defined in the model
+            agents_with_ratings.append({
+                'customer_first_name': agent.customer_first_name,
+                'customer_last_name': agent.customer_last_name,
+                'customer_id': agent.customer_id,
+                'is_online': agent.is_online,
+                'rating': agent_rating
+            })
     return render(request, 'index.html', {'normaluser': normal_users_count, 'agentuser': agent_user_count,
-                                          'all_agents': all_agents, 'payments': amount, 'username': username})
+                                          'all_agents': agents_with_ratings, 'payments': amount, 'username': username})
 
 
 @require_POST
@@ -204,6 +215,9 @@ def registered_users(request):
                 wallet.wallet_coins = 0
                 wallet.purchase_date = None
                 wallet.save()
+
+                user.is_existing = False
+                user.save()
 
     return render(request, 'registered_users.html', {'users': users, 'username': username})
 
@@ -541,6 +555,10 @@ def start_call(request):
         start_time=timezone.now()
     )
 
+    agent = CustomerModel.object.get(customer_id = agent_id)
+    agent.is_online = False
+    agent.save()
+
     return Response({"call_id": call.call_id})
 
 
@@ -551,6 +569,10 @@ def end_call(request):
     call = CallDetailsModel.objects.get(call_id=call_id)
     call.end_time = timezone.now()
     call.save()
+
+    agent = CustomerModel.object.get(customer_id=call.agent)
+    agent.is_online = True
+    agent.save()
 
     # Fetch call duration from Agora API
     agora_app_id = settings.AGORA_APP_ID
@@ -772,3 +794,34 @@ def get_chat(request, user1, user2):
     serializer = MessageSerializer(messages, many=True)
 
     return Response({'messages': serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def give_rating(request):
+    agent_id = request.data.get('agent')
+    user_id = request.data.get('user')
+    rating = request.data.get('ratings')
+
+    # Get the agent and user instances
+    try:
+        agent = CustomerModel.objects.get(customer_id=agent_id)
+        user = CustomerModel.objects.get(customer_id=user_id)
+    except CustomerModel.DoesNotExist:
+        return Response({'error': 'Invalid agent or user ID'}, status=status.HTTP_400_BAD_REQUEST)
+
+    newrating = RatingModel.objects.create(
+        agent = agent,
+        user = user,
+        ratings = rating,
+        created_at = datetime.now()
+    )
+
+    return Response({'message':"Thank you for your feedback!"}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def terms_conditions(request, id):
+    agent = CustomerModel.objects.get(customer_id=id)
+    agent.terms_conditions = True
+    agent.save()
+    return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)

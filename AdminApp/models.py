@@ -52,7 +52,7 @@ class CustomerModel(models.Model):
     is_existing = models.BooleanField(default=False)
     adhaar_no = models.CharField(max_length=50, default="unknown")
     rating = models.IntegerField()
-    c = models.BooleanField(default=False)
+    terms_conditions = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.customer_first_name} {self.customer_last_name}"

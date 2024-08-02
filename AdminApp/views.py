@@ -1,3 +1,5 @@
+import base64
+
 import requests
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
@@ -16,6 +18,9 @@ from datetime import datetime
 from .forms import CustomerForm, AdminForm, CallPackageForm, ChatPackageForm
 from .serializer import *
 from .models import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 MESSAGE_COST = 0.25  # Cost per message to agent
@@ -555,7 +560,7 @@ def start_call(request):
         start_time=timezone.now()
     )
 
-    agent = CustomerModel.object.get(customer_id = agent_id)
+    agent = CustomerModel.objects.get(customer_id = agent_id)
     agent.is_online = False
     agent.save()
 
@@ -565,56 +570,64 @@ def start_call(request):
 @api_view(['POST'])
 def end_call(request):
     call_id = request.data.get('call_id')
-
-    call = CallDetailsModel.objects.get(call_id=call_id)
-    call.end_time = timezone.now()
-    call.save()
-
-    agent = CustomerModel.object.get(customer_id=call.agent)
-    agent.is_online = True
-    agent.save()
-
-    # Fetch call duration from Agora API
-    agora_app_id = settings.AGORA_APP_ID
-    agora_app_certificate = settings.AGORA_APP_CERTIFICATE
-    agora_api_url = f'https://api.agora.io/dev/v1/channel/{agora_app_id}/{call.agora_channel_name}?token={agora_app_certificate}'
-
-    response = requests.get(agora_api_url)
-    call_data = response.json()
-
-    if 'duration' in call_data:
-        duration = call_data['duration'] // 60  # Convert seconds to minutes
-        call.duration = duration
+    try:
+        call = CallDetailsModel.objects.get(call_id=call_id)
+        call.end_time = timezone.now()
         call.save()
 
+        agent = CustomerModel.objects.get(customer_id=call.agent)
+        agent.is_online = True
+        agent.save()
+
+        # Fetch call duration from Agora API
+        # agora_app_id = settings.AGORA_APP_ID
+        # agora_app_certificate = settings.AGORA_APP_CERTIFICATE
+        # agora_api_url = f'https://api.agora.io/dev/v1/channel/{agora_app_id}/{call.agora_channel_name}?token={agora_app_certificate}'
+        #
+        # response = requests.get(agora_api_url)
+        # call_data = response.json()
+        # Calculate exact duration in seconds
+        duration_seconds = (call.end_time - call.start_time).total_seconds()
+
         caller_wallet = WalletModel.objects.get(user=call.caller)
-        agent_purchase = WalletModel.objects.get(user=call.agent)
+        agent_wallet = WalletModel.objects.get(user=call.agent)
 
         cost_per_minute = 150
         amount_per_minute = 3
 
+        # Calculate cost per second
+        cost_per_second = cost_per_minute / 60
+        amount_per_second = amount_per_minute / 60
+
         # Deduct coins from caller
-        caller_wallet.wallet_coins -= duration * cost_per_minute
+        caller_wallet.wallet_coins -= duration_seconds * cost_per_second
         caller_wallet.save()
 
         # Add amount to agent's balance
-        agent_purchase.call_amount += duration * amount_per_minute
-        agent_purchase.total_minutes += duration
-        agent_purchase.total_amount = agent_purchase.total_amount + (duration * amount_per_minute)
-        agent_purchase.save()
+        agent_wallet.call_amount += duration_seconds * amount_per_second
+        agent_wallet.total_minutes += duration_seconds / 60
+        agent_wallet.total_amount += duration_seconds * amount_per_second
+        agent_wallet.save()
 
         # Create transaction record
         AgentTransactionModel.objects.create(
-            agent=agent_purchase,
-            receiver= call.caller,
-            transaction_amount=amount_per_minute,
+            agent=agent,
+            receiver=call.caller,
+            transaction_amount=duration_seconds * amount_per_second,
             transaction_date=datetime.now(),
             transaction_type='Call'
         )
 
-        return Response({"duration": duration})
-    else:
-        return Response({"error": "Failed to fetch call duration from Agora API"}, status=500)
+
+        return Response({"duration": duration_seconds / 60})
+    except CallDetailsModel.DoesNotExist:
+        return Response({"error": "Call not found"}, status=404)
+    except CustomerModel.DoesNotExist:
+        return Response({"error": "Customer not found"}, status=404)
+    except WalletModel.DoesNotExist:
+        return Response({"error": "Wallet not found"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['GET'])
@@ -825,3 +838,5 @@ def terms_conditions(request, id):
     agent.terms_conditions = True
     agent.save()
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
+
+

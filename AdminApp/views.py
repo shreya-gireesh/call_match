@@ -575,7 +575,8 @@ def end_call(request):
         call.end_time = timezone.now()
         call.save()
 
-        agent = CustomerModel.objects.get(customer_id=call.agent)
+        agent_id = call.agent.customer_id
+        agent = CustomerModel.objects.get(customer_id=agent_id)
         agent.is_online = True
         agent.save()
 

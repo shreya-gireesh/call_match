@@ -579,13 +579,6 @@ def end_call(request):
         agent.is_online = True
         agent.save()
 
-        # Fetch call duration from Agora API
-        # agora_app_id = settings.AGORA_APP_ID
-        # agora_app_certificate = settings.AGORA_APP_CERTIFICATE
-        # agora_api_url = f'https://api.agora.io/dev/v1/channel/{agora_app_id}/{call.agora_channel_name}?token={agora_app_certificate}'
-        #
-        # response = requests.get(agora_api_url)
-        # call_data = response.json()
         # Calculate exact duration in seconds
         duration_seconds = (call.end_time - call.start_time).total_seconds()
 
@@ -617,7 +610,6 @@ def end_call(request):
             transaction_date=datetime.now(),
             transaction_type='Call'
         )
-
 
         return Response({"duration": duration_seconds / 60})
     except CallDetailsModel.DoesNotExist:

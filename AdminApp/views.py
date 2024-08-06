@@ -441,6 +441,21 @@ def logout(request):
 
 
 # api
+@api_view(['GET'])
+def check_users(request):
+    contact = request.data.get('mobile_no')
+    if not contact:
+        return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the user already exists
+    try:
+        user = CustomerModel.objects.get(customer_contact=contact)
+        user_data = CustomerSerializer(user)
+        return Response(user_data.data, status=status.HTTP_200_OK)
+
+    except CustomerModel.DoesNotExist:
+        return Response({'message': 'User not existing'}, status=400)
+
+
 @api_view(['POST'])
 def customers(request):
     contact = request.data.get('mobile_no')

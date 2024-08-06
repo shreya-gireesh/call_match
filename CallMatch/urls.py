@@ -46,6 +46,7 @@ urlpatterns = [
     path('login_user/', views.customers, name='user_data'),
     path('all_users/', views.all_users, name='all_users'),
     path('all_agents/', views.all_agents, name='all_agents'),
+    path('check_user/', views.check_users, name='check_user'),
     path('update_profile/<int:id>', views.update_profile, name='update_profile'),
     path('terms/<int:id>', views.terms_conditions, name='terms_conditions'),
     path('wallet/<int:id>', views.wallet, name='wallet'),

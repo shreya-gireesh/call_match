@@ -22,7 +22,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 MESSAGE_COST = 0.25  # Cost per message to agent
 
 
@@ -62,19 +61,33 @@ def download_report(request):
         response['Content-Disposition'] = 'attachment; filename="report.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['Type', 'Customer ID', 'Name', 'Email', 'Contact', 'Status', 'Languages', 'Adhaar No', 'Details'])
+        writer.writerow(
+            ['Type', 'Customer ID', 'Name', 'Email', 'Contact', 'Status', 'Languages', 'Adhaar No', 'Details'])
 
         for customer in customers:
             if customer.is_agent:
-                withdrawals = WithdrawalHistoryModel.objects.filter(agent=customer, withdrawal_date__range=[from_date, to_date]).order_by('-withdrawal_date')
-                transactions = AgentTransactionModel.objects.filter(agent=customer, transaction_date__range=[from_date, to_date]).order_by('-transaction_date')
+                withdrawals = WithdrawalHistoryModel.objects.filter(agent=customer, withdrawal_date__range=[from_date,
+                                                                                                            to_date]).order_by(
+                    '-withdrawal_date')
+                transactions = AgentTransactionModel.objects.filter(agent=customer, transaction_date__range=[from_date,
+                                                                                                             to_date]).order_by(
+                    '-transaction_date')
                 details = f"Withdrawals: {' | '.join([f'{w.withdrawal_date} - {w.withdrawal_amount}' for w in withdrawals])}; Transactions: {' | '.join([f'{t.transaction_date} - {t.transaction_amount} ({t.transaction_type})' for t in transactions])}"
-                writer.writerow(['Agent', customer.customer_id, f"{customer.customer_first_name} {customer.customer_last_name}", customer.customer_email, customer.customer_contact, customer.status, customer.languages, customer.adhaar_no, details])
+                writer.writerow(
+                    ['Agent', customer.customer_id, f"{customer.customer_first_name} {customer.customer_last_name}",
+                     customer.customer_email, customer.customer_contact, customer.status, customer.languages,
+                     customer.adhaar_no, details])
             else:
-                purchases = UserPurchaseModel.objects.filter(user=customer, purchase_date__range=[from_date, to_date]).order_by('-purchase_date')
-                payments = PaymentModel.objects.filter(user=customer, created_at__range=[from_date, to_date]).order_by('-created_at')
+                purchases = UserPurchaseModel.objects.filter(user=customer,
+                                                             purchase_date__range=[from_date, to_date]).order_by(
+                    '-purchase_date')
+                payments = PaymentModel.objects.filter(user=customer, created_at__range=[from_date, to_date]).order_by(
+                    '-created_at')
                 details = f"Purchases: {' | '.join([f'{p.purchase_date} - {p.purchase_amount}' for p in purchases])}; Payments: {' | '.join([f'{p.created_at} - {p.amount}' for p in payments])}"
-                writer.writerow(['User', customer.customer_id, f"{customer.customer_first_name} {customer.customer_last_name}", customer.customer_email, customer.customer_contact, customer.status, customer.languages, customer.adhaar_no, details])
+                writer.writerow(
+                    ['User', customer.customer_id, f"{customer.customer_first_name} {customer.customer_last_name}",
+                     customer.customer_email, customer.customer_contact, customer.status, customer.languages,
+                     customer.adhaar_no, details])
 
         return response
 
@@ -82,7 +95,7 @@ def download_report(request):
 
 
 def agent_report(request):
-    agents = CustomerModel.objects.filter(status ='Agent User' )
+    agents = CustomerModel.objects.filter(status='Agent User')
     report_data = {}
     if request.method == 'POST':
         agent_id = request.POST.get('agent_id')
@@ -117,8 +130,8 @@ def agent_report(request):
             {
                 "receiver": f"{t.receiver.customer_first_name} {t.receiver.customer_last_name}",
                 "amount": t.transaction_amount,
-                "date":  t.transaction_date.strftime('%d %B %Y %I:%M %p'),
-                "type":t.transaction_type
+                "date": t.transaction_date.strftime('%d %B %Y %I:%M %p'),
+                "type": t.transaction_type
             }
             for t in transactions
         ]
@@ -168,7 +181,7 @@ def home(request):
     else:
         normal_users_count = CustomerModel.objects.filter(status='Normal User').count
         agent_user_count = CustomerModel.objects.filter(status='Agent User').count
-        all_agents = CustomerModel.objects.filter(status = 'Agent User')
+        all_agents = CustomerModel.objects.filter(status='Agent User')
         payments = PaymentModel.objects.all().aggregate(Sum('amount'))
         amount = payments['amount__sum']
         # Ensure each agent's rating is included in the context
@@ -237,7 +250,7 @@ def add_user(request):
             if form.is_valid():
                 customer = form.save()  # Saves the form data to the CustomerModel database table
 
-                wallet = WalletModel(user = customer)
+                wallet = WalletModel(user=customer)
                 wallet.save()
 
                 return redirect('users')  # Redirect to a success page or another view after successful submission
@@ -300,7 +313,7 @@ def coin_package(request):
         return redirect('/login')
     coins = CallPackageModel.objects.all()
     chats = ChatPackageModel.objects.all()
-    return render(request, 'coin_package.html', {'coins': coins,'chats': chats, 'username': username})
+    return render(request, 'coin_package.html', {'coins': coins, 'chats': chats, 'username': username})
 
 
 def add_package(request):
@@ -353,7 +366,7 @@ def report_view(request):
             user_details = []
             agent_details = []
 
-            users = CustomerModel.objects.filter(status = 'Normal User')
+            users = CustomerModel.objects.filter(status='Normal User')
 
             for user in users:
                 purchases = UserPurchaseModel.objects.filter(user=user, purchase_date__range=[from_date, to_date])
@@ -366,22 +379,23 @@ def report_view(request):
                         'contact': user.customer_contact,
                     },
                     'purchases': [
-                    {
-                        'purchase_date': '-' if not purchases else purchase.purchase_date.strftime('%d %B %Y %I:%M %p'),
-                        'purchase_amount': '-' if not purchases else purchase.purchase_amount
-                    }
-                    for purchase in purchases
-                ],
+                        {
+                            'purchase_date': '-' if not purchases else purchase.purchase_date.strftime(
+                                '%d %B %Y %I:%M %p'),
+                            'purchase_amount': '-' if not purchases else purchase.purchase_amount
+                        }
+                        for purchase in purchases
+                    ],
                     'payments': [
-                    {
-                        'created_at': '-' if not payments else payment.created_at.strftime('%d %B %Y %I:%M %p'),
-                        'amount': '-' if not payments else  payment.amount
-                    }
-                    for payment in payments
-                ],
+                        {
+                            'created_at': '-' if not payments else payment.created_at.strftime('%d %B %Y %I:%M %p'),
+                            'amount': '-' if not payments else payment.amount
+                        }
+                        for payment in payments
+                    ],
                 })
 
-            agents = CustomerModel.objects.filter(status = 'Agent User')
+            agents = CustomerModel.objects.filter(status='Agent User')
 
             for agent in agents:
                 withdrawals = WithdrawalHistoryModel.objects.filter(agent=agent,
@@ -400,20 +414,20 @@ def report_view(request):
                         'adhaar_no': agent.adhaar_no,
                     },
                     'withdrawals': [
-                    {
-                        'withdrawal_date': withdrawal.withdrawal_date.strftime('%d %B %Y %I:%M %p'),
-                        'withdrawal_amount': withdrawal.withdrawal_amount
-                    }
-                    for withdrawal in withdrawals
-                ],
+                        {
+                            'withdrawal_date': withdrawal.withdrawal_date.strftime('%d %B %Y %I:%M %p'),
+                            'withdrawal_amount': withdrawal.withdrawal_amount
+                        }
+                        for withdrawal in withdrawals
+                    ],
                     'transactions': [
-                    {
-                        'transaction_date': transaction.transaction_date.strftime('%d %B %Y %I:%M %p'),
-                        'transaction_amount': transaction.transaction_amount,
-                        'transaction_type': transaction.transaction_type
-                    }
-                    for transaction in transactions
-                ],
+                        {
+                            'transaction_date': transaction.transaction_date.strftime('%d %B %Y %I:%M %p'),
+                            'transaction_amount': transaction.transaction_amount,
+                            'transaction_type': transaction.transaction_type
+                        }
+                        for transaction in transactions
+                    ],
                 })
             return JsonResponse({'user_details': user_details, 'agent_details': agent_details})
 
@@ -442,13 +456,10 @@ def logout(request):
 
 # api
 @api_view(['GET'])
-def check_users(request):
-    contact = request.data.get('mobile_no')
-    if not contact:
-        return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
-        # Check if the user already exists
+def check_users(request, mobileno):
+    # Check if the user already exists
     try:
-        user = CustomerModel.objects.get(customer_contact=contact)
+        user = CustomerModel.objects.get(customer_contact=mobileno)
         user_data = CustomerSerializer(user)
         return Response(user_data.data, status=status.HTTP_200_OK)
 
@@ -491,27 +502,26 @@ def customers(request):
 
 @api_view(['GET'])
 def all_agents(request):
-    users = CustomerModel.objects.filter(status = CustomerModel.AGENT_USER)
+    users = CustomerModel.objects.filter(status=CustomerModel.AGENT_USER)
     user_data = CustomerSerializer(users, many=True)
     return Response(user_data.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 def all_users(request):
-    users = CustomerModel.objects.filter(status = CustomerModel.NORMAL_USER)
+    users = CustomerModel.objects.filter(status=CustomerModel.NORMAL_USER)
     user_data = CustomerSerializer(users, many=True)
     return Response(user_data.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
 def update_profile(request, id):
-    user = CustomerModel.objects.get(customer_id = id)
-    user_data = CustomerSerializer(instance=user, data=request.data, partial = True)
+    user = CustomerModel.objects.get(customer_id=id)
+    user_data = CustomerSerializer(instance=user, data=request.data, partial=True)
     if user_data.is_valid():
         user_data.save()
         return Response({"message": "Profile updated successfully"})
     return Response(user_data.errors)
-
 
 
 @api_view(['GET'])
@@ -530,7 +540,7 @@ def withdrawal(request, id):
         agent.total_amount = agent.total_amount - agent_amount
         agent.save()
         WithdrawalHistoryModel.objects.create(
-            agent=CustomerModel.objects.get(customer_id= id),
+            agent=CustomerModel.objects.get(customer_id=id),
             withdrawal_amount=agent_amount,
             withdrawal_date=datetime.now()
         )
@@ -549,7 +559,7 @@ def notify_agent(request):
 
     try:
         caller = CustomerModel.objects.get(customer_id=caller_id)
-        agent = CustomerModel.objects.get(customer_id =agent_id)
+        agent = CustomerModel.objects.get(customer_id=agent_id)
 
         notification = {
             "message": f"{caller.username} is trying to connect with you.",
@@ -575,7 +585,7 @@ def start_call(request):
         start_time=timezone.now()
     )
 
-    agent = CustomerModel.objects.get(customer_id = agent_id)
+    agent = CustomerModel.objects.get(customer_id=agent_id)
     agent.is_online = False
     agent.save()
 
@@ -675,7 +685,7 @@ def buy_chat_package(request):
         amount=package.package_price,
         razorpay_id=razorpay_payment_id,
         paid=True,
-        created_at = datetime.now()
+        created_at=datetime.now()
     )
 
     # Add messages to user
@@ -685,8 +695,8 @@ def buy_chat_package(request):
 
     purchase_date = datetime.now()
     history = UserPurchaseModel.objects.create(
-        user = user,
-        purchase_amount = package.package_price,
+        user=user,
+        purchase_amount=package.package_price,
         purchase_date=purchase_date
     )
 
@@ -714,7 +724,7 @@ def buy_call_package(request):
         amount=package.package_price,
         razorpay_id=razorpay_payment_id,
         paid=True,
-        created_at = datetime.now()
+        created_at=datetime.now()
     )
 
     # Add messages to user
@@ -726,7 +736,7 @@ def buy_call_package(request):
     history = UserPurchaseModel.objects.create(
         user=user,
         purchase_amount=package.package_price,
-        purchase_date = purchase_date
+        purchase_date=purchase_date
     )
 
     return Response({'message': 'Package purchased successfully'}, status=status.HTTP_200_OK)
@@ -831,13 +841,13 @@ def give_rating(request):
         return Response({'error': 'Invalid agent or user ID'}, status=status.HTTP_400_BAD_REQUEST)
 
     newrating = RatingModel.objects.create(
-        agent = agent,
-        user = user,
-        ratings = rating,
-        created_at = datetime.now()
+        agent=agent,
+        user=user,
+        ratings=rating,
+        created_at=datetime.now()
     )
 
-    return Response({'message':"Thank you for your feedback!"}, status=status.HTTP_200_OK)
+    return Response({'message': "Thank you for your feedback!"}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -846,5 +856,3 @@ def terms_conditions(request, id):
     agent.terms_conditions = True
     agent.save()
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
-
-

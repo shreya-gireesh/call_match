@@ -1,5 +1,4 @@
 import base64
-
 import requests
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
@@ -195,6 +194,9 @@ def home(request):
                 'is_online': agent.is_online,
                 'rating': agent_rating
             })
+        date_time = datetime.now()
+        today_amount = AgentTransactionModel.objects.filter(transaction_date = date_time)
+        print(today_amount.values())
     return render(request, 'index.html', {'normaluser': normal_users_count, 'agentuser': agent_user_count,
                                           'all_agents': agents_with_ratings, 'payments': amount, 'username': username})
 

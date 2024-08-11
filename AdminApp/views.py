@@ -194,11 +194,25 @@ def home(request):
                 'is_online': agent.is_online,
                 'rating': agent_rating
             })
-        date_time = datetime.now()
-        today_amount = AgentTransactionModel.objects.filter(transaction_date = date_time)
-        print(today_amount.values())
+
+        # Total Revenue from Users
+        total_revenue = UserPurchaseModel.objects.aggregate(Sum('purchase_amount'))['purchase_amount__sum']
+
+        # Total Payments to Agents (For Chats and Calls)
+        total_agent_payments = AgentTransactionModel.objects.aggregate(Sum('transaction_amount'))[
+            'transaction_amount__sum']
+
+        # Total Withdrawals by Agents
+        total_withdrawals = WithdrawalHistoryModel.objects.aggregate(Sum('withdrawal_amount'))['withdrawal_amount__sum']
+
+        # Calculating Profit
+        company_profit = total_revenue - (total_agent_payments + total_withdrawals)
+        if total_revenue:
+            profit = round((company_profit / total_revenue) * 100, 2)
+        else:
+            profit = 0.00
     return render(request, 'index.html', {'normaluser': normal_users_count, 'agentuser': agent_user_count,
-                                          'all_agents': agents_with_ratings, 'payments': amount, 'username': username})
+                                          'all_agents': agents_with_ratings, 'payments': amount, 'username': username, 'profit': profit})
 
 
 @require_POST
@@ -384,7 +398,8 @@ def report_view(request):
                         {
                             'purchase_date': '-' if not purchases else purchase.purchase_date.strftime(
                                 '%d %B %Y %I:%M %p'),
-                            'purchase_amount': '-' if not purchases else purchase.purchase_amount
+                            'purchase_amount': '-' if not purchases else purchase.purchase_amount,
+                            'purchase_type': '-' if not purchases else purchase.purchase_type
                         }
                         for purchase in purchases
                     ],
@@ -472,13 +487,18 @@ def check_users(request, mobileno):
 @api_view(['POST'])
 def customers(request):
     contact = request.data.get('mobile_no')
+    password = request.data.get('password')
     if not contact:
         return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Check if the user already exists
     try:
         user = CustomerModel.objects.get(customer_contact=contact)
-        # Update existing user's is_existing and is_online to True
+        # If the user exists, check if the password is correct
+        if user.customer_password != password:
+            return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # If the password is correct, update user's is_existing and is_online to True
         user.is_existing = True
         user.is_online = True
         user.save()
@@ -486,9 +506,11 @@ def customers(request):
         return Response(user_data.data, status=status.HTTP_200_OK)
 
     except CustomerModel.DoesNotExist:
+
         # If user does not exist, create a new user
         user = CustomerModel.objects.create(
             customer_contact=contact,
+            customer_password=password,
             is_existing=False,
             is_online=True
         )
@@ -699,7 +721,8 @@ def buy_chat_package(request):
     history = UserPurchaseModel.objects.create(
         user=user,
         purchase_amount=package.package_price,
-        purchase_date=purchase_date
+        purchase_date=purchase_date,
+        purchase_type = 'Chat'
     )
 
     return Response({'message': 'Package purchased successfully'}, status=status.HTTP_200_OK)
@@ -738,7 +761,8 @@ def buy_call_package(request):
     history = UserPurchaseModel.objects.create(
         user=user,
         purchase_amount=package.package_price,
-        purchase_date=purchase_date
+        purchase_date=purchase_date,
+        purchase_type='Call'
     )
 
     return Response({'message': 'Package purchased successfully'}, status=status.HTTP_200_OK)
@@ -856,5 +880,6 @@ def give_rating(request):
 def terms_conditions(request, id):
     agent = CustomerModel.objects.get(customer_id=id)
     agent.terms_conditions = True
+    agent.is_online = True
     agent.save()
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)

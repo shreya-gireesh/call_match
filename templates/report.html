@@ -308,7 +308,7 @@
                                 <td>${detail.user.contact}</td>
                                 <td><ul>`;
                             detail.purchases.forEach(function(purchase) {
-                                userTable += `<li>${purchase.purchase_date}: ${purchase.purchase_amount}</li>`;
+                                userTable += `<li>${purchase.purchase_type} package of ₹${parseFloat(purchase.purchase_amount).toFixed(2)} on ${purchase.purchase_date} </li>`;
                             });
                             userTable += `</ul></td><td><ul>`;
                             detail.payments.forEach(function(payment) {
@@ -342,11 +342,11 @@
                                 <td>${detail.agent.adhaar_no}</td>
                                 <td><ul>`;
                             detail.withdrawals.forEach(function(withdrawal) {
-                                agentTable += `<li>${withdrawal.withdrawal_date}: ${withdrawal.withdrawal_amount}</li>`;
+                                agentTable += `<li>Amount ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} on ${withdrawal.withdrawal_date}</li>`;
                             });
                             agentTable += `</ul></td><td><ul>`;
                             detail.transactions.forEach(function(transaction) {
-                                agentTable += `<li>${transaction.transaction_date}: ${transaction.transaction_amount} (${transaction.transaction_type})</li>`;
+                                agentTable += `<li>Received ₹${parseFloat(transaction.transaction_amount).toFixed(2)} through ${transaction.transaction_type} on ${transaction.transaction_date}</li>`;
                             });
                             agentTable += `</ul></td></tr>`;
                         });

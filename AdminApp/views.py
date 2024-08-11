@@ -498,6 +498,12 @@ def customers(request):
         if user.customer_password != password:
             return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Validate if the contact number contains only digits and is exactly 10 digits long
+        if not contact.isdigit() or len(contact) != 10:
+            return Response(
+                {'error': 'Invalid Phone Number. It must be exactly 10 digits long and contain only numbers.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
         # If the password is correct, update user's is_existing and is_online to True
         user.is_existing = True
         user.is_online = True

@@ -307,24 +307,66 @@
                 const reportDiv = document.getElementById('report');
                 reportDiv.innerHTML = `
                     <h2 class="h6 mb-3 text-gray-800">Report for <strong>${data.agent_name}</strong> from ${fromDate} to ${toDate}</h2>
+                    <div>
+                        <table class="table table-striped table-hover table-bordered">
+                            <tr>
+                                <th>Call Amount</th>
+                                <td>₹${data.wallet.call_amount}</td>
+                            </tr>
+                            <tr>
+                                <th>Chat Amount</th>
+                                <td>₹${data.wallet.chat_amount}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Messages Received</th>
+                                <td>${data.wallet.total_messages_received}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Minutes</th>
+                                <td>${data.wallet.total_minutes}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Amount</th>
+                                <td>₹${data.wallet.total_amount}</td>
+                            </tr>
+                        </table>
 
-                    <p><strong>Call Amount:</strong> ₹${data.wallet.call_amount}</p>
-                    <p><strong>Chat Amount:</strong> ₹${data.wallet.chat_amount}</p>
-                    <p><strong>Total Messages Received:</strong> ${data.wallet.total_messages_received}</p>
-                    <p><strong>Total Minutes:</strong> ${data.wallet.total_minutes}</p>
-                    <p><strong>Total Amount:</strong> ₹${data.wallet.total_amount}</p>
-                    <h3 class="h6 mb-3 text-gray-800">Transactions:</h3>
-                    <ul>
-                        ${data.transactions.map(t => `
-                            <li>Amount ₹ ${t.amount} received from ${t.receiver} on ${t.date} through ${t.type}</li>
-                        `).join('')}
-                    </ul>
-                    <h3 class="h6 mb-3 text-gray-800">Withdrawals:</h3>
-                    <ul>
-                        ${data.withdrawals.map(w => `
-                            <li>Amount: ₹ ${w.withdrawal_amount}, Date: ${w.withdrawal_date}</li>
-                        `).join('')}
-                    </ul>
+                        <h3 class="h6 mt-3 mb-3 text-gray-800">Transactions:</h3>
+                        <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Receiver</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                            </tr>
+                            </thead>
+                            ${data.transactions.map(t => `
+                            <tr>
+                                <td>₹ ${t.amount}</td>
+                                <td>${t.receiver}</td>
+                                <td>${t.date}</td>
+                                <td>${t.type}</td>
+                            </tr>
+                            `).join('')}
+                        </table>
+
+                        <h3 class="h6 mt-3 mb-3 text-gray-800">Withdrawals:</h3>
+                        <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                            </thead>
+                            ${data.withdrawals.map(w => `
+                            <tr>
+                                <td>₹ ${w.withdrawal_amount}</td>
+                                <td>${w.withdrawal_date}</td>
+                            </tr>
+                            `).join('')}
+                        </table>
+                    </div>
                 `;
                 document.getElementById('report-card').style.display = 'block';
             });

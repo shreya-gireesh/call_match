@@ -53,6 +53,7 @@ class CustomerModel(models.Model):
     adhaar_no = models.CharField(max_length=50, default="unknown")
     rating = models.IntegerField()
     terms_conditions = models.BooleanField(default=False)
+    customer_password = models.CharField(max_length=100)
 
     def __str__(self):
         return f"{self.customer_first_name} {self.customer_last_name}"
@@ -77,10 +78,17 @@ class WalletModel(models.Model):
 
 
 class UserPurchaseModel(models.Model):
+    CHAT = 'Chat'
+    CALL = 'Call'
+    PURCHASE_TYPE_CHOICES = [
+        (CHAT, 'Chat'),
+        (CALL, 'Call'),
+    ]
     userpurchase_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomerModel, on_delete=models.CASCADE)
     purchase_date = models.DateTimeField()
     purchase_amount = models.FloatField()
+    purchase_type = models.CharField(max_length=10, choices=PURCHASE_TYPE_CHOICES, null=True)
 
 
 class WithdrawalHistoryModel(models.Model):

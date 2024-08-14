@@ -4,10 +4,6 @@
 <head>
     {% load static %}
     <style>
-        .user-category{
-            border: 0!important;
-        }
-
         .logo{
             height:2rem;
             width:8rem;
@@ -15,7 +11,32 @@
             background-size: cover;
             background-repeat: no-repeat;
         }
+        .scrollable-section {
+            max-height: 360px; /* Adjust this value as needed */
+            overflow-y: auto;
+        }
+        .dropdown-menu-right {
+            left: 0 !important;
+            right: auto !important;
+        }
+        .rating-container i {
+            margin-right: 2px;
+        }
+        .roman-list {
+            list-style-type: upper-roman; /* Roman numeral bullets */
+            padding-left: 20px; /* Adjust as needed */
+        }
 
+        .hyphen-list {
+            list-style-type: none; /* Remove default bullet points */
+            padding-left: 20px; /* Adjust as needed */
+        }
+
+        .hyphen-list li::before {
+            content: "-"; /* Add hyphen before each list item */
+            padding-right: 8px; /* Space between hyphen and text */
+            color: black; /* Adjust hyphen color if needed */
+        }
     </style>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -53,7 +74,7 @@
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item ">
+            <li class="nav-item">
                 <a class="nav-link" href="{% url 'home' %}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
@@ -87,6 +108,7 @@
                         <h6 class="collapse-header">Custom Utilities:</h6>
                         <a class="collapse-item" href="{% url 'wallet_normal_users' %}">Wallet</a>
                         <a class="collapse-item" href="{% url 'history_normal_users' %}">Purchase History</a>
+
                     </div>
                 </div>
             </li>
@@ -110,7 +132,7 @@
             </li>
 
             <!-- Nav Item - Utilities Collapse Menu -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities2"
                     aria-expanded="true" aria-controls="collapseUtilities1">
                     <i class="fas fa-fw fa-coins"></i>
@@ -125,8 +147,9 @@
                     </div>
                 </div>
             </li>
+
             <!-- Nav Item - Utilities Collapse Menu -->
-            <li class="nav-item">
+            <li class="nav-item active">
                 <a class="nav-link collapsed" href="{% url 'privacy-policy' %}"
                     aria-expanded="true" aria-controls="collapseUtilities1">
                     <i class="fas fa-fw fa-fingerprint"></i>
@@ -163,6 +186,7 @@
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
 
+
                         <div class="topbar-divider d-none d-sm-block"></div>
 
                         <!-- Nav Item - User Information -->
@@ -171,11 +195,17 @@
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-fw fa-user"></i>
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{username}}</span>
+
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="{% url 'logout' %}" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Profile
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -192,86 +222,98 @@
 
                     <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Add Packages</h1>
+                        <h1 class="h3 mb-0 text-gray-800">Privacy Policy</h1>
                     </div>
 
                     <!-- Content Row -->
-                    <div>
+                    <div class="row">
                         <!-- Area Chart -->
                         <div class="col">
                             <div class="card shadow mb-4">
                                 <!-- Card Header - Dropdown -->
                                 <div
                                     class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                    <h6 class="m-0 font-weight-bold text-primary">Call Packages</h6>
+                                    <h6 class="m-0 font-weight-bold text-primary">Job Conditions</h6>
                                 </div>
                                 <!-- Card Body -->
                                 <div class="card-body">
-                                    <div>
-                                        <form class="user" method="POST">
-                                            {% csrf_token %}
-                                            <div class="form-group row">
-                                                <div class="col-sm-6 mb-3 mb-sm-0">
-                                                      {{ callform.package_price }}
-                                                </div>
-                                                <div class=" col-sm-6">
-                                                       {{ callform.total_coins }}
-                                                </div>
+                                    <div class="p-5 text-dark">
+                                        <h4 class="text-dark">Privacy Policy</h4>
+                <p><strong>CallMatch</strong> is dedicated to protecting your privacy. This Privacy Policy outlines how we collect, use, disclose, and safeguard your information when you use our mobile application, <strong>Call Match</strong>. Please review this policy carefully.</p>
 
-                                            </div>
+                <h5>1. Information We Collect</h5>
+                <h6>1.1 Personal Information</h6>
+                <p>We may collect personal information that you provide, including:</p>
+                <ul>
+                    <li><strong>Phone Number:</strong> Used for verifying your account and providing service functionality.</li>
+                    <li><strong>Contact List:</strong> With your consent, we access your contact list to enhance app features.</li>
+                </ul>
 
-                                            <div>
-                                                <input type="submit" name="call_package" class="btn btn-primary" value="SUBMIT">
-                                            </div>
-                                        </form>
+                <h6>1.2 Call Data</h6>
+                <p>We collect information related to your phone calls, including:</p>
+                <ul>
+                    <li><strong>Call Logs:</strong> Information about incoming, outgoing, and missed calls to provide matching services.</li>
+                    <li><strong>Call Duration:</strong> Duration of the calls for better matching accuracy.</li>
+                </ul>
+
+                <h6>1.3 Usage Data</h6>
+                <p>We collect data on how you interact with our app, such as:</p>
+                <ul>
+                    <li><strong>Device Information:</strong> Device type, operating system, and app version.</li>
+                    <li><strong>Log Data:</strong> IP address, timestamps, and activity within the app.</li>
+                </ul>
+
+                <h6>1.4 Location Data</h6>
+                <p>If enabled, we may collect location data to enhance functionality or provide location-based features.</p>
+
+                <h5>2. How We Use Your Information</h5>
+                <p>We use the collected information for the following purposes:</p>
+                <ul>
+                    <li><strong>To Provide and Improve Services:</strong> Utilize call data and contact information to enhance matching features and overall app performance.</li>
+                    <li><strong>To Personalize Your Experience:</strong> Customize app features based on your interactions and preferences.</li>
+                    <li><strong>To Communicate With You:</strong> Send updates, notifications, and support messages related to your use of the app.</li>
+                    <li><strong>To Ensure Security:</strong> Monitor and protect against unauthorized access and misuse of the app.</li>
+                </ul>
+
+                <h5>3. How We Share Your Information</h5>
+                <p>We do not sell or rent your personal information. We may share your information in the following situations:</p>
+                <ul>
+                    <li><strong>With Service Providers:</strong> We may share data with third-party vendors who assist with app functionalities (e.g., cloud storage, analytics). These parties are obligated to protect your information.</li>
+                    <li><strong>For Legal Compliance:</strong> Disclose information to comply with legal requirements or to protect our rights and safety.</li>
+                    <li><strong>In Business Transfers:</strong> In case of a merger, acquisition, or asset sale, your information may be transferred as part of the transaction.</li>
+                </ul>
+
+                <h5>4. Your Choices and Rights</h5>
+                <p>You have the following rights regarding your personal information:</p>
+                <ul>
+                    <li><strong>Access and Correction:</strong> Request access to or correction of your personal data.</li>
+                    <li><strong>Opt-Out:</strong> Opt out of receiving promotional communications from us.</li>
+                    <li><strong>Data Deletion:</strong> Request the deletion of your personal data, subject to legal requirements.</li>
+                </ul>
+                <p>To exercise these rights, please contact us at [Contact Email].</p>
+
+                <h5>5. Data Security</h5>
+                <p>We implement appropriate security measures to protect your personal information. Despite our efforts, no data transmission or storage system can be guaranteed to be 100% secure. We strive to safeguard your data, but we cannot guarantee its absolute security.</p>
+
+                <h5>6. Children’s Privacy</h5>
+                <p>Our app is not intended for children under the age of 13. We do not knowingly collect personal information from children. If we learn that we have collected information from a child, we will take steps to delete it promptly.</p>
+
+                <h5>7. Changes to This Privacy Policy</h5>
+                <p>We may update this Privacy Policy periodically. We will notify you of any significant changes by posting the updated policy in the app. Continued use of the app following changes constitutes your acceptance of the updated policy.</p>
+
+                <h5>8. Contact Us</h5>
+                <p>If you have questions or concerns about this Privacy Policy or our data practices, please contact us at:</p>
+                <p>Email: callmatch2024@gmail.com<br>Address: Ernakulam</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="col">
-                            <div class="card shadow mb-4">
-                                <!-- Card Header - Dropdown -->
-                                <div
-                                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                                    <h6 class="m-0 font-weight-bold text-primary">Chat Packages</h6>
-                                </div>
-                                <!-- Card Body -->
-                                <div class="card-body">
-                                    <div>
-                                        <form class="user" method="POST">
-                                            {% csrf_token %}
-                                            <div class="form-group row">
-
-                                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                                          {{ chatform.package_price }}
-                                                    </div>
-                                                    <div class="col-sm-6">
-                                                          {{ chatform.message_count }}
-                                                    </div>
-
-                                            </div>
-                                            <div>
-                                                <input type="submit" name="chat_package" class="btn btn-primary" value="SUBMIT">
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Scroll to Top Button-->
-    <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
-    </a>
-
-    <!-- Logout Modal-->
+<!-- Logout Modal-->
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -291,7 +333,7 @@
         </div>
     </div>
 
- <!-- Bootstrap core JavaScript-->
+<!-- Bootstrap core JavaScript-->
     <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 

@@ -41,6 +41,7 @@ urlpatterns = [
     path('get_payment_data/', views.get_payment_data, name='get_payment_data'),
     path('report/', views.report_view, name='report'),
     path('report/download/', views.download_report, name='download_report'),
+    path('privacy-policy', views.privacypolicy, name='privacy-policy'),
 
     #api
     path('login_user/', views.customers, name='user_data'),

@@ -45,6 +45,7 @@ urlpatterns = [
 
     #api
     path('login_user/', views.customers, name='user_data'),
+    # path('sign-up/', views.signup, name='signup'),
     path('all_users/', views.all_users, name='all_users'),
     path('all_agents/', views.all_agents, name='all_agents'),
     path('check_user/<str:mobileno>', views.check_users, name='check_user'),

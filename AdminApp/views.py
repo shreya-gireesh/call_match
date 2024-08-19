@@ -1,11 +1,12 @@
 import base64
 import requests
+import re
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse
+from django.http import JsonResponse, HttpResponseNotAllowed, HttpResponse, HttpResponseRedirect
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.contenttypes.models import ContentType
@@ -467,11 +468,7 @@ def get_agora_token(request):
 
 
 def privacypolicy(request):
-    username = request.session.get('user', None)
-    if username is None:
-        return redirect('/login')
-    else:
-        return render(request, 'privacypolicy.html', {'username': username})
+    return HttpResponseRedirect('https://sites.google.com/view/callmatch-privacy-policy/home')
 
 
 def logout(request):
@@ -492,6 +489,23 @@ def check_users(request, mobileno):
         return Response({'message': 'User not existing'}, status=400)
 
 
+def check_password(password):
+    # Check if the password meets the criteria
+    if len(password) < 8:
+        return False, 'Password must be at least 8 characters long.'
+
+    if not re.search(r'[A-Za-z]', password):
+        return False, 'Password must contain at least one alphabet.'
+
+    if not re.search(r'\d', password):
+        return False, 'Password must contain at least one numeral.'
+
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, 'Password must contain at least one special character.'
+
+    return True, ''  # Return True if the password is valid
+
+
 @api_view(['POST'])
 def customers(request):
     contact = request.data.get('mobile_no')
@@ -499,18 +513,18 @@ def customers(request):
     if not contact:
         return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Validate if the contact number contains only digits and is exactly 10 digits long
+    if not contact.isdigit() or len(contact) != 10:
+        return Response(
+            {'error': 'Invalid Phone Number. It must be exactly 10 digits long and contain only numbers.'},
+            status=status.HTTP_400_BAD_REQUEST)
+
     # Check if the user already exists
     try:
         user = CustomerModel.objects.get(customer_contact=contact)
         # If the user exists, check if the password is correct
         if user.customer_password != password:
             return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Validate if the contact number contains only digits and is exactly 10 digits long
-        if not contact.isdigit() or len(contact) != 10:
-            return Response(
-                {'error': 'Invalid Phone Number. It must be exactly 10 digits long and contain only numbers.'},
-                status=status.HTTP_400_BAD_REQUEST)
 
         # If the password is correct, update user's is_existing and is_online to True
         user.is_existing = True
@@ -520,6 +534,10 @@ def customers(request):
         return Response(user_data.data, status=status.HTTP_200_OK)
 
     except CustomerModel.DoesNotExist:
+        # Validate the password using check_password function
+        is_valid, error_message = check_password(password)
+        if not is_valid:
+            return Response({'error': error_message}, status=status.HTTP_400_BAD_REQUEST)
 
         # If user does not exist, create a new user
         user = CustomerModel.objects.create(
@@ -536,6 +554,15 @@ def customers(request):
 
     user_data = CustomerSerializer(user)
     return Response(user_data.data, status=status.HTTP_200_OK)
+
+
+
+# @api_view(['POST'])
+# def signup(request):
+#     contact = request.data.get('mobile_no')
+#     password = request.data.get('password')
+#     repeat_password = request.data.get('repeat_password')
+
 
 
 @api_view(['GET'])

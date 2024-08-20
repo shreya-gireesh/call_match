@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-$n3i+(=aw8@!q!7tc2k^4bf9m&*0d06wum(+_nmjdjir&(e7ny
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.0.2.2', '0.0.0.0', '127.0.0.1', '159.65.145.124']
+ALLOWED_HOSTS = ['10.0.2.2', '0.0.0.0', '127.0.0.1', '159.65.145.124', 'http://callmatch.in/']
 
 
 # Application definition

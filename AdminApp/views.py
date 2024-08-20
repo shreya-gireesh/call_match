@@ -469,6 +469,7 @@ def get_agora_token(request):
 
 def privacypolicy(request):
     return HttpResponseRedirect('https://sites.google.com/view/callmatch-privacy-policy/home')
+    # return render(request, 'privacypolicy.html')
 
 
 def logout(request):

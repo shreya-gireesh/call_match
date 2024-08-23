@@ -1,8 +1,10 @@
 import base64
+import json
 import requests
 import re
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -19,6 +21,7 @@ from .forms import CustomerForm, AdminForm, CallPackageForm, ChatPackageForm
 from .serializer import *
 from .models import *
 import logging
+from utilis.paytm.PaytmChecksum import verifySignature, generateSignature
 
 logger = logging.getLogger(__name__)
 
@@ -511,6 +514,7 @@ def check_password(password):
 def customers(request):
     contact = request.data.get('mobile_no')
     password = request.data.get('password')
+    gender = request.data.get('gender')
     if not contact:
         return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -544,6 +548,7 @@ def customers(request):
         user = CustomerModel.objects.create(
             customer_contact=contact,
             customer_password=password,
+            gender=gender,
             is_existing=False,
             is_online=True
         )
@@ -927,65 +932,70 @@ def terms_conditions(request, id):
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
 
 
-# @api_view(['GET'])
-# def privacy_policy(request):
-#     policy = {
-#         "title": "Privacy Policy",
-#         "content": """
-#             App Name is dedicated to protecting your privacy. This Privacy Policy outlines how we collect, use, disclose, and safeguard your information when you use our mobile application, Call Match. Please review this policy carefully.
-#
-#             1. Information We Collect
-#             1.1 Personal Information
-#             We may collect personal information that you provide, including:
-#             • Phone Number: Used for verifying your account and providing service functionality.
-#             • Contact List: With your consent, we access your contact list to enhance app features.
-#
-#             1.2 Call Data
-#             We collect information related to your phone calls, including:
-#             • Call Logs: Information about incoming, outgoing, and missed calls to provide matching services.
-#             • Call Duration: Duration of the calls for better matching accuracy.
-#
-#             1.3 Usage Data
-#             We collect data on how you interact with our app, such as:
-#             • Device Information: Device type, operating system, and app version.
-#             • Log Data: IP address, timestamps, and activity within the app.
-#
-#             1.4 Location Data
-#             If enabled, we may collect location data to enhance functionality or provide location-based features.
-#
-#             2. How We Use Your Information
-#             We use the collected information for the following purposes:
-#             • To Provide and Improve Services: Utilize call data and contact information to enhance matching features and overall app performance.
-#             • To Personalize Your Experience: Customize app features based on your interactions and preferences.
-#             • To Communicate With You: Send updates, notifications, and support messages related to your use of the app.
-#             • To Ensure Security: Monitor and protect against unauthorized access and misuse of the app.
-#
-#             3. How We Share Your Information
-#             We do not sell or rent your personal information. We may share your information in the following situations:
-#             • With Service Providers: We may share data with third-party vendors who assist with app functionalities (e.g., cloud storage, analytics). These parties are obligated to protect your information.
-#             • For Legal Compliance: Disclose information to comply with legal requirements or to protect our rights and safety.
-#             • In Business Transfers: In case of a merger, acquisition, or asset sale, your information may be transferred as part of the transaction.
-#
-#             4. Your Choices and Rights
-#             You have the following rights regarding your personal information:
-#             • Access and Correction: Request access to or correction of your personal data.
-#             • Opt-Out: Opt out of receiving promotional communications from us.
-#             • Data Deletion: Request the deletion of your personal data, subject to legal requirements.
-#             To exercise these rights, please contact us at [Contact Email].
-#
-#             5. Data Security
-#             We implement appropriate security measures to protect your personal information. Despite our efforts, no data transmission or storage system can be guaranteed to be 100% secure. We strive to safeguard your data, but we cannot guarantee its absolute security.
-#
-#             6. Children’s Privacy
-#             Our app is not intended for children under the age of 13. We do not knowingly collect personal information from children. If we learn that we have collected information from a child, we will take steps to delete it promptly.
-#
-#             7. Changes to This Privacy Policy
-#             We may update this Privacy Policy periodically. We will notify you of any significant changes by posting the updated policy in the app. Continued use of the app following changes constitutes your acceptance of the updated policy.
-#
-#             8. Contact Us
-#             If you have questions or concerns about this Privacy Policy or our data practices, please contact us at:
-#             Email: [Contact Email]
-#             Address: [Company Address]
-#         """
-#     }
-#     return JsonResponse(policy)
+@api_view(['GET'])
+def initiate_payment(request):
+    # Replace with your actual details
+    mid = "YOUR_MID_HERE"
+    merchant_key = "YOUR_MERCHANT_KEY"
+    order_id = "ORDERID_98765"
+    callback_url = "https://your-domain.com/callback/"
+    txn_amount = "1.00"
+    customer_id = "CUST_001"
+
+    paytmParams = {
+        "body": {
+            "requestType": "Payment",
+            "mid": mid,
+            "websiteName": "YOUR_WEBSITE_NAME",
+            "orderId": order_id,
+            "callbackUrl": callback_url,
+            "txnAmount": {
+                "value": txn_amount,
+                "currency": "INR",
+            },
+            "userInfo": {
+                "custId": customer_id,
+            },
+        }
+    }
+
+    # Generate checksum
+    checksum = generateSignature(json.dumps(paytmParams["body"]), merchant_key)
+
+    paytmParams["head"] = {
+        "signature": checksum
+    }
+
+    url = f"https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid={mid}&orderId={order_id}"
+    headers = {"Content-type": "application/json"}
+
+    # Make the request to Paytm
+    response = requests.post(url, data=json.dumps(paytmParams), headers=headers)
+    response_data = response.json()
+
+    return JsonResponse(response_data)
+
+
+@csrf_exempt
+def payment_callback(request):
+    # Extract the Paytm parameters from the POST request
+    received_data = dict(request.POST.items())
+
+    paytm_params = received_data.copy()
+    paytm_checksum = received_data.pop('CHECKSUMHASH', None)
+
+    # Verify the checksum
+    is_valid_checksum = verifySignature(paytm_params, "YOUR_MERCHANT_KEY", paytm_checksum)
+
+    if is_valid_checksum:
+        # Check the transaction status
+        if received_data['RESPCODE'] == '01':
+            # Transaction was successful
+            # Update your database, e.g., mark order as paid
+            return HttpResponse("Payment successful")
+        else:
+            # Transaction failed
+            return HttpResponse(f"Payment failed: {received_data['RESPMSG']}")
+    else:
+        # Checksum is invalid
+        return HttpResponse("Checksum verification failed", status=400)

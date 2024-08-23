@@ -33,11 +33,22 @@ class CustomerModel(models.Model):
         (MALAYALAM, 'Malayalam'),
         (TAMIL, 'Tamil'),
     ]
+    MALE = 'Male'
+    FEMALE = 'Female'
+    GENDER_CHOICES = [
+        (MALE, 'Male'),
+        (FEMALE, 'Female')
+    ]
     customer_id = models.AutoField(primary_key=True)
     customer_first_name = models.CharField(max_length=100, default="unknown")
     customer_last_name = models.CharField(max_length=100, default="unknown")
     customer_email = models.EmailField(default="unknown")
     customer_contact = models.CharField(max_length=50)
+    gender = models.CharField(
+        max_length=20,
+        choices=GENDER_CHOICES,
+        null=True
+    )
     status = models.CharField(
         max_length=20,
         choices=USER_STATUS_CHOICES,

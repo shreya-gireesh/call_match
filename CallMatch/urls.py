@@ -63,5 +63,7 @@ urlpatterns = [
     path('send_message/', views.send_message, name='send_message'),
     path('get_chat/<int:user1>/<int:user2>', views.get_chat, name='get_chat'),
     path('give_rating/', views.give_rating, name='rating'),
+    path('initiate_payment/', views.initiate_payment, name='initiate_payment'),
+    path('callback/', views.payment_callback, name='payment-callback'),
 
 ]

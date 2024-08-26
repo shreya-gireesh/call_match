@@ -999,3 +999,19 @@ def payment_callback(request):
     else:
         # Checksum is invalid
         return HttpResponse("Checksum verification failed", status=400)
+
+
+@api_view(['GET'])
+def online_status(request, id):
+    user = CustomerModel.objects.get(customer_id = id)
+    user.is_online = True
+    user.save()
+    return JsonResponse({'status': 'success', 'message': 'User is now online.'})
+
+
+@api_view(['GET'])
+def offline_status(request, id):
+    user = CustomerModel.objects.get(customer_id=id)
+    user.is_online = False
+    user.save()
+    return JsonResponse({'status': 'success', 'message': 'User is now offline.'})

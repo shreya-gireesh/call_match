@@ -1,5 +1,7 @@
 import base64
 import json
+import uuid
+
 import requests
 import re
 import csv
@@ -932,15 +934,16 @@ def terms_conditions(request, id):
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def initiate_payment(request):
     # Replace with your actual details
-    mid = "YOUR_MID_HERE"
-    merchant_key = "YOUR_MERCHANT_KEY"
-    order_id = "ORDERID_98765"
-    callback_url = "https://your-domain.com/callback/"
-    txn_amount = "1.00"
-    customer_id = "CUST_001"
+    mid = "cFrLti86230523261499"
+    merchant_key = "B05yxmmdhxhdp129"
+    # Generate a unique order ID for each transaction
+    order_id = str(uuid.uuid4())
+    callback_url = " http://127.0.0.1:8000/callback/"
+    txn_amount = request.data.get('amount')
+    customer_id = request.data.get('user_id')
 
     paytmParams = {
         "body": {
@@ -985,7 +988,7 @@ def payment_callback(request):
     paytm_checksum = received_data.pop('CHECKSUMHASH', None)
 
     # Verify the checksum
-    is_valid_checksum = verifySignature(paytm_params, "YOUR_MERCHANT_KEY", paytm_checksum)
+    is_valid_checksum = verifySignature(paytm_params, "B05yxmmdhxhdp129", paytm_checksum)
 
     if is_valid_checksum:
         # Check the transaction status

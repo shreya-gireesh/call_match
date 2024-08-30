@@ -587,8 +587,8 @@ def all_agents(request):
             last_message = last_message_obj.message
             last_message_time = last_message_obj.created_at
         else:
-            last_message = None
-            last_message_time = None
+            last_message = "no message"
+            last_message_time = "no message"
 
         user_data.append({
             'customer_id': user.customer_id,
@@ -598,6 +598,7 @@ def all_agents(request):
             'customer_password': user.customer_password,
             'gender': user.gender,
             'status': user.status,
+            'is_online': user.is_online,
             'last_message': last_message,
             'last_message_time': last_message_time,
         })
@@ -618,8 +619,8 @@ def all_users(request):
             last_message = last_message_obj.message
             last_message_time = last_message_obj.created_at
         else:
-            last_message = None
-            last_message_time = None
+            last_message = "no message"
+            last_message_time = "no message"
 
         user_data.append({
             'customer_id': user.customer_id,
@@ -629,6 +630,7 @@ def all_users(request):
             'customer_password': user.customer_password,
             'gender': user.gender,
             'status': user.status,
+            'is_online': user.is_online,
             'last_message': last_message,
             'last_message_time': last_message_time,
         })

@@ -485,10 +485,10 @@ def logout(request):
 
 # api
 @api_view(['GET'])
-def check_users(request, mobileno):
+def check_users(request, mobileno, password):
     # Check if the user already exists
     try:
-        user = CustomerModel.objects.get(customer_contact=mobileno)
+        user = CustomerModel.objects.get(customer_contact=mobileno, customer_password=password)
         user_data = CustomerSerializer(user)
         return Response(user_data.data, status=status.HTTP_200_OK)
 

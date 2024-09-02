@@ -67,5 +67,6 @@ urlpatterns = [
     path('callback/', views.payment_callback, name='payment-callback'),
     path('online_status/<int:id>', views.online_status, name='online-status'),
     path('offline_status/<int:id>', views.offline_status, name='offline-status'),
+    path('message_inbox/<int:id>', views.message_inbox, name='message_inbox'),
 
 ]

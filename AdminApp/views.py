@@ -933,6 +933,48 @@ def send_message(request):
 
 
 @api_view(['GET'])
+def message_inbox(request, id):
+    user = CustomerModel.objects.get(customer_id=id)
+    inboxes = InboxModel.objects.filter(
+        inboxparticipantsmodel__user=user
+    ).distinct()
+
+    user_data = []
+    message = []
+
+    for inbox in inboxes:
+        last_message = MessageModel.objects.filter(
+            inbox=inbox
+        ).order_by('-created_at').first()
+
+        if last_message:
+            other_participant = (
+                CustomerModel.objects
+                .filter(inboxparticipantsmodel__inbox=inbox)
+                .exclude(customer_id=user.customer_id)
+                .first()
+            )
+            user_data.append({
+
+                'participant_name': other_participant.customer_first_name,
+                'last_message': last_message.message,
+                'sent_by': last_message.sender.customer_first_name,
+                'sent_at': last_message.created_at,
+            })
+        # user_data.append({
+        #     'first_name': user.customer_first_name,
+        #     'last_name': user.customer_last_name,
+        #     'message':[{
+        #         'agent_name':message.participant_name,
+        #         'last_message':message.last_message,
+        #
+        #     }]
+        # })
+
+    return Response(user_data)
+
+
+@api_view(['GET'])
 def get_chat(request, user1, user2):
     try:
         user_1 = CustomerModel.objects.get(customer_id=user1)

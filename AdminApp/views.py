@@ -601,6 +601,7 @@ def all_agents(request):
             'is_online': user.is_online,
             'last_message': last_message,
             'last_message_time': last_message_time,
+            'rating':user.rating
         })
 
     return Response(user_data, status=status.HTTP_200_OK)
@@ -633,6 +634,7 @@ def all_users(request):
             'is_online': user.is_online,
             'last_message': last_message,
             'last_message_time': last_message_time,
+            'rating': user.rating
         })
 
     return Response(user_data, status=status.HTTP_200_OK)

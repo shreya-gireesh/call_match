@@ -1026,77 +1026,77 @@ def terms_conditions(request, id):
     agent.save()
     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
 
-
-@api_view(['GET'])
-def initiate_payment(request):
-    # Replace with your actual details
-    mid = "cFrLti86230523261499"
-    merchant_key = "B05yxmmdhxhdp129"
-    # Generate a unique order ID for each transaction
-    order_id = str(uuid.uuid4())
-    callback_url = " http://127.0.0.1:8000/callback/"
-    txn_amount = request.data.get('amount')
-    customer_id = request.data.get('user_id')
-
-    paytmParams = dict()
-    paytmParams["body"] = {
-        "requestType": "Payment",
-        "mid": "cFrLti86230523261499",
-        "websiteName": "CallMatch",
-        "orderId": "ORDERID_98765",
-        "callbackUrl": "http://127.0.0.1:8000/callback/",
-        "txnAmount": {
-            "value": "1.00",
-            "currency": "INR",
-        },
-        "userInfo": {
-            "custId": "CUST_001",
-        },
-    }
-
-    # Generate checksum by parameters we have in body
-    # Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys
-    checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), merchant_key)
-
-    paytmParams["head"] = {
-        "signature": checksum
-    }
-
-    post_data = json.dumps(paytmParams)
-    print(post_data)
-    # for Staging
-    url = f"https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid={mid}&orderId=ORDERID_98765"
-
-    # for Production
-    # url = "https://securegw.paytm.in/theia/api/v1/initiateTransaction?mid=YOUR_MID_HERE&orderId=ORDERID_98765"
-    response = requests.post(url, data=post_data, headers={"Content-type": "application/json"}).json()
-    print(response)
-    return JsonResponse(response)
-
-
-@csrf_exempt
-def payment_callback(request):
-    # Extract the Paytm parameters from the POST request
-    received_data = dict(request.POST.items())
-
-    paytm_params = received_data.copy()
-    paytm_checksum = received_data.pop('CHECKSUMHASH', None)
-
-    # Verify the checksum
-    is_valid_checksum = verifySignature(paytm_params, "B05yxmmdhxhdp129", paytm_checksum)
-
-    if is_valid_checksum:
-        # Check the transaction status
-        if received_data['RESPCODE'] == '01':
-            # Transaction was successful
-            # Update your database, e.g., mark order as paid
-            return HttpResponse("Payment successful")
-        else:
-            # Transaction failed
-            return HttpResponse(f"Payment failed: {received_data['RESPMSG']}")
-    else:
-        # Checksum is invalid
-        return HttpResponse("Checksum verification failed", status=400)
+#
+# @api_view(['GET'])
+# def initiate_payment(request):
+#     # Replace with your actual details
+#     mid = "cFrLti86230523261499"
+#     merchant_key = "B05yxmmdhxhdp129"
+#     # Generate a unique order ID for each transaction
+#     order_id = str(uuid.uuid4())
+#     callback_url = " http://127.0.0.1:8000/callback/"
+#     txn_amount = request.data.get('amount')
+#     customer_id = request.data.get('user_id')
+#
+#     paytmParams = dict()
+#     paytmParams["body"] = {
+#         "requestType": "Payment",
+#         "mid": "cFrLti86230523261499",
+#         "websiteName": "CallMatch",
+#         "orderId": "ORDERID_98765",
+#         "callbackUrl": "http://127.0.0.1:8000/callback/",
+#         "txnAmount": {
+#             "value": "1.00",
+#             "currency": "INR",
+#         },
+#         "userInfo": {
+#             "custId": "CUST_001",
+#         },
+#     }
+#
+#     # Generate checksum by parameters we have in body
+#     # Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys
+#     checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), merchant_key)
+#
+#     paytmParams["head"] = {
+#         "signature": checksum
+#     }
+#
+#     post_data = json.dumps(paytmParams)
+#     print(post_data)
+#     # for Staging
+#     url = f"https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid={mid}&orderId=ORDERID_98765"
+#
+#     # for Production
+#     # url = "https://securegw.paytm.in/theia/api/v1/initiateTransaction?mid=YOUR_MID_HERE&orderId=ORDERID_98765"
+#     response = requests.post(url, data=post_data, headers={"Content-type": "application/json"}).json()
+#     print(response)
+#     return JsonResponse(response)
+#
+#
+# @csrf_exempt
+# def payment_callback(request):
+#     # Extract the Paytm parameters from the POST request
+#     received_data = dict(request.POST.items())
+#
+#     paytm_params = received_data.copy()
+#     paytm_checksum = received_data.pop('CHECKSUMHASH', None)
+#
+#     # Verify the checksum
+#     is_valid_checksum = verifySignature(paytm_params, "B05yxmmdhxhdp129", paytm_checksum)
+#
+#     if is_valid_checksum:
+#         # Check the transaction status
+#         if received_data['RESPCODE'] == '01':
+#             # Transaction was successful
+#             # Update your database, e.g., mark order as paid
+#             return HttpResponse("Payment successful")
+#         else:
+#             # Transaction failed
+#             return HttpResponse(f"Payment failed: {received_data['RESPMSG']}")
+#     else:
+#         # Checksum is invalid
+#         return HttpResponse("Checksum verification failed", status=400)
 
 
 @api_view(['GET'])

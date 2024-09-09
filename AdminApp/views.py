@@ -1,5 +1,7 @@
 import base64
 import json
+import uuid
+
 import requests
 import re
 import csv
@@ -14,6 +16,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Sum
 from CallMatch import settings
+from utilis.paytm import PaytmChecksum
 from .utils import generate_agora_token
 from django.utils import timezone
 from datetime import datetime
@@ -574,15 +577,65 @@ def customers(request):
 @api_view(['GET'])
 def all_agents(request):
     users = CustomerModel.objects.filter(status=CustomerModel.AGENT_USER)
-    user_data = CustomerSerializer(users, many=True)
-    return Response(user_data.data, status=status.HTTP_200_OK)
+    user_data = []
+
+    for user in users:
+        # Get the last message sent by this user
+        last_message_obj = MessageModel.objects.filter(sender=user).order_by('-created_at').first()
+
+        if last_message_obj:
+            last_message = last_message_obj.message
+            last_message_time = last_message_obj.created_at
+        else:
+            last_message = "no message"
+            last_message_time = "no message"
+
+        user_data.append({
+            'customer_id': user.customer_id,
+            'customer_first_name': user.customer_first_name,
+            'customer_last_name': user.customer_last_name,
+            'customer_contact': user.customer_contact,
+            'customer_password': user.customer_password,
+            'gender': user.gender,
+            'status': user.status,
+            'is_online': user.is_online,
+            'last_message': last_message,
+            'last_message_time': last_message_time,
+        })
+
+    return Response(user_data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
 def all_users(request):
     users = CustomerModel.objects.filter(status=CustomerModel.NORMAL_USER)
-    user_data = CustomerSerializer(users, many=True)
-    return Response(user_data.data, status=status.HTTP_200_OK)
+    user_data = []
+
+    for user in users:
+        # Get the last message sent by this user
+        last_message_obj = MessageModel.objects.filter(sender=user).order_by('-created_at').first()
+
+        if last_message_obj:
+            last_message = last_message_obj.message
+            last_message_time = last_message_obj.created_at
+        else:
+            last_message = "no message"
+            last_message_time = "no message"
+
+        user_data.append({
+            'customer_id': user.customer_id,
+            'customer_first_name': user.customer_first_name,
+            'customer_last_name': user.customer_last_name,
+            'customer_contact': user.customer_contact,
+            'customer_password': user.customer_password,
+            'gender': user.gender,
+            'status': user.status,
+            'is_online': user.is_online,
+            'last_message': last_message,
+            'last_message_time': last_message_time,
+        })
+
+    return Response(user_data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -880,6 +933,48 @@ def send_message(request):
 
 
 @api_view(['GET'])
+def message_inbox(request, id):
+    user = CustomerModel.objects.get(customer_id=id)
+    inboxes = InboxModel.objects.filter(
+        inboxparticipantsmodel__user=user
+    ).distinct()
+
+    user_data = []
+    message = []
+
+    for inbox in inboxes:
+        last_message = MessageModel.objects.filter(
+            inbox=inbox
+        ).order_by('-created_at').first()
+
+        if last_message:
+            other_participant = (
+                CustomerModel.objects
+                .filter(inboxparticipantsmodel__inbox=inbox)
+                .exclude(customer_id=user.customer_id)
+                .first()
+            )
+            user_data.append({
+
+                'participant_name': other_participant.customer_first_name,
+                'last_message': last_message.message,
+                'sent_by': last_message.sender.customer_first_name,
+                'sent_at': last_message.created_at,
+            })
+        # user_data.append({
+        #     'first_name': user.customer_first_name,
+        #     'last_name': user.customer_last_name,
+        #     'message':[{
+        #         'agent_name':message.participant_name,
+        #         'last_message':message.last_message,
+        #
+        #     }]
+        # })
+
+    return Response(user_data)
+
+
+@api_view(['GET'])
 def get_chat(request, user1, user2):
     try:
         user_1 = CustomerModel.objects.get(customer_id=user1)
@@ -935,45 +1030,48 @@ def terms_conditions(request, id):
 @api_view(['GET'])
 def initiate_payment(request):
     # Replace with your actual details
-    mid = "YOUR_MID_HERE"
-    merchant_key = "YOUR_MERCHANT_KEY"
-    order_id = "ORDERID_98765"
-    callback_url = "https://your-domain.com/callback/"
-    txn_amount = "1.00"
-    customer_id = "CUST_001"
+    mid = "cFrLti86230523261499"
+    merchant_key = "B05yxmmdhxhdp129"
+    # Generate a unique order ID for each transaction
+    order_id = str(uuid.uuid4())
+    callback_url = " http://127.0.0.1:8000/callback/"
+    txn_amount = request.data.get('amount')
+    customer_id = request.data.get('user_id')
 
-    paytmParams = {
-        "body": {
-            "requestType": "Payment",
-            "mid": mid,
-            "websiteName": "YOUR_WEBSITE_NAME",
-            "orderId": order_id,
-            "callbackUrl": callback_url,
-            "txnAmount": {
-                "value": txn_amount,
-                "currency": "INR",
-            },
-            "userInfo": {
-                "custId": customer_id,
-            },
-        }
+    paytmParams = dict()
+    paytmParams["body"] = {
+        "requestType": "Payment",
+        "mid": "cFrLti86230523261499",
+        "websiteName": "CallMatch",
+        "orderId": "ORDERID_98765",
+        "callbackUrl": "http://127.0.0.1:8000/callback/",
+        "txnAmount": {
+            "value": "1.00",
+            "currency": "INR",
+        },
+        "userInfo": {
+            "custId": "CUST_001",
+        },
     }
 
-    # Generate checksum
-    checksum = generateSignature(json.dumps(paytmParams["body"]), merchant_key)
+    # Generate checksum by parameters we have in body
+    # Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys
+    checksum = PaytmChecksum.generateSignature(json.dumps(paytmParams["body"]), merchant_key)
 
     paytmParams["head"] = {
         "signature": checksum
     }
 
-    url = f"https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid={mid}&orderId={order_id}"
-    headers = {"Content-type": "application/json"}
+    post_data = json.dumps(paytmParams)
+    print(post_data)
+    # for Staging
+    url = f"https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid={mid}&orderId=ORDERID_98765"
 
-    # Make the request to Paytm
-    response = requests.post(url, data=json.dumps(paytmParams), headers=headers)
-    response_data = response.json()
-
-    return JsonResponse(response_data)
+    # for Production
+    # url = "https://securegw.paytm.in/theia/api/v1/initiateTransaction?mid=YOUR_MID_HERE&orderId=ORDERID_98765"
+    response = requests.post(url, data=post_data, headers={"Content-type": "application/json"}).json()
+    print(response)
+    return JsonResponse(response)
 
 
 @csrf_exempt
@@ -985,7 +1083,7 @@ def payment_callback(request):
     paytm_checksum = received_data.pop('CHECKSUMHASH', None)
 
     # Verify the checksum
-    is_valid_checksum = verifySignature(paytm_params, "YOUR_MERCHANT_KEY", paytm_checksum)
+    is_valid_checksum = verifySignature(paytm_params, "B05yxmmdhxhdp129", paytm_checksum)
 
     if is_valid_checksum:
         # Check the transaction status
@@ -999,3 +1097,19 @@ def payment_callback(request):
     else:
         # Checksum is invalid
         return HttpResponse("Checksum verification failed", status=400)
+
+
+@api_view(['GET'])
+def online_status(request, id):
+    user = CustomerModel.objects.get(customer_id = id)
+    user.is_online = True
+    user.save()
+    return JsonResponse({'status': 'success', 'message': 'User is now online.'})
+
+
+@api_view(['GET'])
+def offline_status(request, id):
+    user = CustomerModel.objects.get(customer_id=id)
+    user.is_online = False
+    user.save()
+    return JsonResponse({'status': 'success', 'message': 'User is now offline.'})

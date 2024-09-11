@@ -241,24 +241,43 @@ def registered_users(request):
         users = CustomerModel.objects.all()
         if request.method == 'POST':
             userid = request.POST.get('user_id')
-            new_status = request.POST.get('status')
-            user = CustomerModel.objects.get(customer_id=userid)
-            user.status = new_status
-            user.save()
-            wallet = WalletModel.objects.get(user=userid)
 
-            if new_status == 'Normal User':
-                wallet.wallet_coins = 300
-                wallet.purchase_date = None
-                wallet.agent_balance = 0
-                wallet.save()
-            elif new_status == 'Agent User':
-                wallet.wallet_coins = 0
-                wallet.purchase_date = None
-                wallet.save()
 
-                user.is_existing = False
-                user.save()
+            # Handle status update
+            userid = request.POST.get('user_id')
+
+            # Handle status update if present
+            if 'status' in request.POST:
+                new_status = request.POST.get('status')
+                user = CustomerModel.objects.get(customer_id=userid)
+                if new_status != user.status:  # Update only if status has changed
+                    user.status = new_status
+                    user.save()
+
+                    # Update wallet based on user status
+                    wallet = WalletModel.objects.get(user=userid)
+                    if new_status == 'Normal User':
+                        wallet.wallet_coins = 300
+                        wallet.purchase_date = None
+                        wallet.agent_balance = 0
+                        wallet.save()
+                    elif new_status == 'Agent User':
+                        wallet.wallet_coins = 0
+                        wallet.purchase_date = None
+                        wallet.save()
+
+                        user.is_existing = False
+                        user.save()
+
+            # Handle language update if present
+            if 'languages' in request.POST:
+                new_languages = request.POST.get('languages')
+                user = CustomerModel.objects.get(customer_id=userid)
+
+                # Only update languages if the user is an Agent
+                if user.status == 'Agent User' and new_languages != user.languages:
+                    user.languages = new_languages
+                    user.save()
 
     return render(request, 'registered_users.html', {'users': users, 'username': username})
 

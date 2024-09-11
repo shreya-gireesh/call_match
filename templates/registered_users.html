@@ -23,7 +23,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Dashboard</title>
+    <title>CallMatch - Dashboard</title>
 
     <!-- Custom fonts for this template-->
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
@@ -228,6 +228,7 @@
                                               <th scope="col">Email</th>
                                               <th scope="col">Phone Number</th>
                                               <th scope="col">Status</th>
+                                              <th scope="col">Languages</th>
                                               <th scope="col">Action</th>
 
                                             </tr>
@@ -251,6 +252,20 @@
                                                   </select>
                                                 </form>
                                               </td>
+                                                <td>
+                                                    <span id="languages_text_{{ user.customer_id }}">{{ user.languages }}</span>
+                                                    {% if user.status == "Agent User" %}
+                                                        <form id="languages_form_{{ user.customer_id }}" method="POST" action="{% url 'users' %}" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="user_id" value="{{ user.customer_id }}">
+                                                            <select id="languages_select_{{ user.customer_id }}" class="form-control user-category" name="languages" style="display: none;">
+                                                                <option value="Both" {% if user.languages == "Both" %}selected{% endif %}>Both</option>
+                                                                <option value="Malayalam" {% if user.languages == "Malayalam" %}selected{% endif %}>Malayalam</option>
+                                                                <option value="Tamil" {% if user.languages == "Tamil" %}selected{% endif %}>Tamil</option>
+                                                            </select>
+                                                        </form>
+                                                    {% endif %}
+                                                </td>
                                               <td>
                                                 <button id="edit_button_{{ user.customer_id }}" class="btn btn-secondary" onclick="editStatus('{{ user.customer_id }}')">Edit</button>
                                                 <button id="save_button_{{ user.customer_id }}" class="btn btn-primary" onclick="saveStatus('{{ user.customer_id }}')" style="display: none;">Save</button>
@@ -318,22 +333,28 @@
     <script src="{% static 'js/demo/chart-pie-demo.js' %}"></script>
 
 <script>
-    function editStatus(userId) {
-      var statusText = document.getElementById('status_text_' + userId);
-      var statusSelect = document.getElementById('status_select_' + userId);
-      var editButton = document.getElementById('edit_button_' + userId);
-      var saveButton = document.getElementById('save_button_' + userId);
+function editStatus(userId) {
+    document.getElementById(`status_text_${userId}`).style.display = 'none';
+    document.getElementById(`status_select_${userId}`).style.display = 'block';
 
-      statusText.style.display = 'none';
-      statusSelect.style.display = 'block';
-      editButton.style.display = 'none';
-      saveButton.style.display = 'inline-block';
+    // If the user is an Agent, allow language editing
+    if (document.getElementById(`status_text_${userId}`).innerText === 'Agent User') {
+        document.getElementById(`languages_text_${userId}`).style.display = 'none';
+        document.getElementById(`languages_select_${userId}`).style.display = 'block';
     }
 
-    function saveStatus(userId) {
-      var form = document.getElementById('status_form_' + userId);
-      form.submit();
+    document.getElementById(`edit_button_${userId}`).style.display = 'none';
+    document.getElementById(`save_button_${userId}`).style.display = 'inline-block';
+}
+
+function saveStatus(userId) {
+    document.getElementById(`status_form_${userId}`).submit();
+
+    // Submit the language form if the user is an Agent
+    if (document.getElementById(`status_text_${userId}`).innerText === 'Agent User') {
+        document.getElementById(`languages_form_${userId}`).submit();
     }
+}
   </script>
 </body>
 </html>

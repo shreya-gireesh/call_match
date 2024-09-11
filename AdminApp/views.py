@@ -617,6 +617,7 @@ def all_agents(request):
             'customer_password': user.customer_password,
             'gender': user.gender,
             'status': user.status,
+            'languages':user.languages,
             'is_online': user.is_online,
             'last_message': last_message,
             'last_message_time': last_message_time,

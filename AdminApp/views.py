@@ -1,5 +1,6 @@
 import base64
 import json
+import math
 import uuid
 
 import requests
@@ -211,6 +212,9 @@ def home(request):
 
         # Total Withdrawals by Agents
         total_withdrawals = WithdrawalHistoryModel.objects.aggregate(Sum('withdrawal_amount'))['withdrawal_amount__sum']
+
+        total_agent_payments = total_agent_payments or 0
+        total_withdrawals = total_withdrawals or 0
 
         # Calculating Profit
         company_profit = total_revenue - (total_agent_payments + total_withdrawals)
@@ -724,6 +728,11 @@ def start_call(request):
     agent_id = request.data.get('agent_id')
     agora_channel_name = request.data.get('agora_channel_name')
 
+    # Check if caller has enough coins to start the call (at least 150 coins)
+    caller_wallet = WalletModel.objects.get(user_id=caller_id)
+    if caller_wallet.wallet_coins < 150:
+        return Response({"error": "Insufficient coins to start the call"}, status=400)
+
     call = CallDetailsModel.objects.create(
         caller_id=caller_id,
         agent_id=agent_id,
@@ -737,6 +746,52 @@ def start_call(request):
 
     return Response({"call_id": call.call_id})
 
+
+@api_view(['POST'])
+def check_call_status(request):
+    call_id = request.data.get('call_id')
+
+    try:
+        # Fetch the call details
+        call = CallDetailsModel.objects.get(call_id=call_id)
+
+        # Calculate the call duration so far
+        duration_seconds = (timezone.now() - call.start_time).total_seconds()
+        duration_minutes = int(duration_seconds // 60) + (1 if duration_seconds % 60 > 0 else 0)
+
+        # Fetch the caller's wallet
+        caller_wallet = WalletModel.objects.get(user=call.caller)
+
+        # Define the cost per minute
+        cost_per_minute = 150
+
+        # Calculate total cost based on the duration
+        total_call_cost = cost_per_minute * duration_minutes
+
+        # Check if the wallet has enough coins left after deducting the total call cost
+        remaining_balance = caller_wallet.wallet_coins - total_call_cost
+
+        # If remaining balance is less than 150, disconnect the call
+        if remaining_balance < cost_per_minute:
+            # Call should be disconnected
+            return Response({
+                "disconnect": True,
+                "message": f"Insufficient coins, please end the call. Current balance: {caller_wallet.wallet_coins} coins."
+            }, status=200)
+
+        # Enough coins to continue, return the remaining balance
+        return Response({
+            "disconnect": False,
+            "message": "Call can continue.",
+            "remaining_balance": remaining_balance
+        }, status=200)
+
+    except CallDetailsModel.DoesNotExist:
+        return Response({"error": "Call not found"}, status=404)
+    except WalletModel.DoesNotExist:
+        return Response({"error": "Wallet not found"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
 def end_call(request):

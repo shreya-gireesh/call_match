@@ -66,5 +66,6 @@ urlpatterns = [
     path('online_status/<int:id>', views.online_status, name='online-status'),
     path('offline_status/<int:id>', views.offline_status, name='offline-status'),
     path('message_inbox/<int:id>', views.message_inbox, name='message_inbox'),
+    path('check-call-status/', views.check_call_status, name='check_call_status'),
 
 ]

@@ -539,7 +539,7 @@ def check_password(password):
 @api_view(['POST'])
 def customers(request):
     contact = request.data.get('mobile_no')
-    password = request.data.get('password')
+    # password = request.data.get('password')
     gender = request.data.get('gender')
     if not contact:
         return Response({'error': 'Phone Number required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -554,8 +554,8 @@ def customers(request):
     try:
         user = CustomerModel.objects.get(customer_contact=contact)
         # If the user exists, check if the password is correct
-        if user.customer_password != password:
-            return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
+        # if user.customer_password != password:
+        #     return Response({'error': 'Incorrect password'}, status=status.HTTP_400_BAD_REQUEST)
 
         # If the password is correct, update user's is_existing and is_online to True
         user.is_existing = True
@@ -566,14 +566,14 @@ def customers(request):
 
     except CustomerModel.DoesNotExist:
         # Validate the password using check_password function
-        is_valid, error_message = check_password(password)
-        if not is_valid:
-            return Response({'error': error_message}, status=status.HTTP_400_BAD_REQUEST)
+        # is_valid, error_message = check_password(password)
+        # if not is_valid:
+        #     return Response({'error': error_message}, status=status.HTTP_400_BAD_REQUEST)
 
         # If user does not exist, create a new user
         user = CustomerModel.objects.create(
             customer_contact=contact,
-            customer_password=password,
+            # customer_password=password,
             gender=gender,
             is_existing=False,
             is_online=True
@@ -1190,3 +1190,7 @@ def offline_status(request, id):
     user.is_online = False
     user.save()
     return JsonResponse({'status': 'success', 'message': 'User is now offline.'})
+
+
+
+

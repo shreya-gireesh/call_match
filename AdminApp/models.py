@@ -64,7 +64,7 @@ class CustomerModel(models.Model):
     adhaar_no = models.CharField(max_length=50, default="unknown")
     rating = models.IntegerField()
     terms_conditions = models.BooleanField(default=False)
-    customer_password = models.CharField(max_length=100)
+    customer_password = models.CharField(max_length=100, default='unknown')
 
     def __str__(self):
         return f"{self.customer_first_name} {self.customer_last_name}"

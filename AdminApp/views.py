@@ -776,14 +776,13 @@ def check_call_status(request):
             # Call should be disconnected
             return Response({
                 "disconnect": True,
-                "message": f"Insufficient coins, please end the call."
+                "message": "Insufficient coins, please end the call."
             }, status=200)
 
         # Enough coins to continue, return the remaining balance
         return Response({
             "disconnect": False,
             "message": "Call can continue.",
-            "remaining_balance": remaining_balance
         }, status=200)
 
     except CallDetailsModel.DoesNotExist:

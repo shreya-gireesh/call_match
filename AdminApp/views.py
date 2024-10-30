@@ -25,6 +25,7 @@ from .forms import CustomerForm, AdminForm, CallPackageForm, ChatPackageForm
 from .serializer import *
 from .models import *
 import logging
+from math import ceil
 from utilis.paytm.PaytmChecksum import verifySignature, generateSignature
 
 logger = logging.getLogger(__name__)
@@ -161,9 +162,7 @@ def login(request):
             admin_name = f"{admin.admin_first_name} {admin.admin_last_name}"
             request.session['user'] = admin_name
             request.session.set_expiry(21600)
-
             expiry = request.session.get_expiry_age()
-
             return redirect('/')
         except AdminModel.DoesNotExist:
             return render(request, 'login.html', {'error': "User not found"})
@@ -243,6 +242,15 @@ def registered_users(request):
         return redirect('/login')
     else:
         users = CustomerModel.objects.all()
+        if request.method == 'GET':
+            name = request.GET.get('name', '').strip()
+            mobile_no = request.GET.get('mobile_no', '').strip()
+
+            if name:
+                users = users.filter(customer_first_name__istartswith=name)
+
+            if mobile_no:
+                users = users.filter(customer_contact__icontains=mobile_no)
         if request.method == 'POST':
             userid = request.POST.get('user_id')
 
@@ -323,6 +331,12 @@ def wallet_normaluser(request):
     if username is None:
         return redirect('/login')
     wallets = WalletModel.objects.filter(user__status='Normal User')
+    if request.method == 'GET':
+        name = request.GET.get('name', '').strip()
+
+        if name:
+            wallets = wallets.filter(user__customer_first_name__istartswith=name)
+
     return render(request, 'normaluser_wallet.html', {'wallets': wallets, 'username': username})
 
 
@@ -332,6 +346,11 @@ def wallet_agentuser(request):
         return redirect('/login')
 
     wallets = WalletModel.objects.filter(user__status='Agent User')
+    if request.method == 'GET':
+        name = request.GET.get('name', '').strip()
+
+        if name:
+            wallets = wallets.filter(user__customer_first_name__istartswith=name)
     return render(request, 'agentuser_wallet.html', {'wallets': wallets, 'username': username})
 
 
@@ -341,6 +360,12 @@ def user_history(request):
         return redirect('/login')
 
     user_history = UserPurchaseModel.objects.all()
+    if request.method == 'GET':
+        name = request.GET.get('name', '').strip()
+
+        if name:
+            user_history = user_history.filter(user__customer_first_name__istartswith=name)
+
     return render(request, 'normaluser_history.html', {'user_history': user_history, 'username': username})
 
 
@@ -350,6 +375,11 @@ def agent_history(request):
         return redirect('/login')
 
     agent_history = WithdrawalHistoryModel.objects.all()
+    if request.method == 'GET':
+        name = request.GET.get('name', '').strip()
+
+        if name:
+            agent_history = agent_history.filter(agent__customer_first_name__istartswith=name)
     return render(request, 'agentuser_history.html', {'agent_history': agent_history, 'username': username})
 
 
@@ -756,9 +786,9 @@ def check_call_status(request):
         call = CallDetailsModel.objects.get(call_id=call_id)
 
         # Calculate the call duration so far
-        duration_seconds = (timezone.now() - call.start_time).total_seconds()
-        duration_minutes = int(duration_seconds // 60) + (1 if duration_seconds % 60 > 0 else 0)
-
+        duration_minutes = (timezone.now() - call.start_time).total_seconds() / 60
+        duration_minutes_int = int(duration_minutes)
+        print(duration_minutes_int)
         # Fetch the caller's wallet
         caller_wallet = WalletModel.objects.get(user=call.caller)
 
@@ -766,7 +796,7 @@ def check_call_status(request):
         cost_per_minute = 150
 
         # Calculate total cost based on the duration
-        total_call_cost = cost_per_minute * duration_minutes
+        total_call_cost = cost_per_minute * duration_minutes_int
 
         # Check if the wallet has enough coins left after deducting the total call cost
         remaining_balance = caller_wallet.wallet_coins - total_call_cost
@@ -806,7 +836,7 @@ def end_call(request):
         agent.save()
 
         # Calculate exact duration in seconds
-        duration_seconds = (call.end_time - call.start_time).total_seconds()
+        duration_minutes = ceil((call.end_time - call.start_time).total_seconds() / 60)
 
         caller_wallet = WalletModel.objects.get(user=call.caller)
         agent_wallet = WalletModel.objects.get(user=call.agent)
@@ -819,25 +849,25 @@ def end_call(request):
         amount_per_second = amount_per_minute / 60
 
         # Deduct coins from caller
-        caller_wallet.wallet_coins -= duration_seconds * cost_per_second
+        caller_wallet.wallet_coins -= duration_minutes * cost_per_second
         caller_wallet.save()
 
         # Add amount to agent's balance
-        agent_wallet.call_amount += duration_seconds * amount_per_second
-        agent_wallet.total_minutes += duration_seconds / 60
-        agent_wallet.total_amount += duration_seconds * amount_per_second
+        agent_wallet.call_amount += duration_minutes * amount_per_second
+        agent_wallet.total_minutes += duration_minutes / 60
+        agent_wallet.total_amount += duration_minutes * amount_per_second
         agent_wallet.save()
 
         # Create transaction record
         AgentTransactionModel.objects.create(
             agent=agent,
             receiver=call.caller,
-            transaction_amount=duration_seconds * amount_per_second,
+            transaction_amount=duration_minutes * amount_per_second,
             transaction_date=datetime.now(),
             transaction_type='Call'
         )
 
-        return Response({"duration": duration_seconds / 60})
+        return Response({"duration": duration_minutes })
     except CallDetailsModel.DoesNotExist:
         return Response({"error": "Call not found"}, status=404)
     except CustomerModel.DoesNotExist:
@@ -1093,14 +1123,26 @@ def give_rating(request):
 
     return Response({'message': "Thank you for your feedback!"}, status=status.HTTP_200_OK)
 
+#
+# @api_view(['POST'])
+# def terms_conditions(request, id):
+#     agent = CustomerModel.objects.get(customer_id=id)
+#     agent.terms_conditions = True
+#     agent.is_online = True
+#     agent.save()
+#     return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-def terms_conditions(request, id):
-    agent = CustomerModel.objects.get(customer_id=id)
-    agent.terms_conditions = True
-    agent.is_online = True
-    agent.save()
-    return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
+def terms_conditions(request):
+    customer_id = request.data.get('customer_id')
+    try:
+        agent = CustomerModel.objects.get(customer_id=customer_id)
+        agent.terms_conditions = True
+        agent.is_online = True
+        agent.save()
+        return Response({'message': "Terms and conditions accepted"}, status=status.HTTP_200_OK)
+    except CustomerModel.DoesNotExist:
+        return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
 #
 # @api_view(['GET'])

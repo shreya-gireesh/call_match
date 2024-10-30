@@ -194,6 +194,34 @@
                         <h1 class="h3 mb-0 text-gray-800">Withdrawal History</h1>
                     </div>
 
+                    <div class="row">
+                        <div class="col-xl-12 col-lg-7">
+                            <div class="card shadow mb-4">
+                                <!-- Card Header - Dropdown -->
+                                <div
+                                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                    <h6 class="m-0 font-weight-bold text-primary">Search</h6>
+
+                                </div>
+                                <!-- Card Body -->
+                                <div class="card-body">
+                                    <form method="GET" action="#" class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <label for="name" class="form-label">Name</label>
+                                            <input name="name" id="name" class="form-select form-control" placeholder="--Name--">
+
+                                        </div>
+                                        <div class="col d-flex justify-content-center align-items-center mt-2">
+                                            <button type="submit" class="mr-2 btn btn-primary">Search</button>
+                                            <a href="{% url 'history_agent_users' %}" class="btn btn-secondary">Reset</a>
+                                        </div>
+                                    </form>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Content Row -->
                     <div class="row">
                         <!-- Area Chart -->
